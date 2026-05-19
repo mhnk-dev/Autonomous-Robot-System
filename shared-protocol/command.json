@@ -1,0 +1,6 @@
+{
+  "type": "TEST",
+  "source": "pi",
+  "target": "esp32",
+  "cmd": "PING"
+}
