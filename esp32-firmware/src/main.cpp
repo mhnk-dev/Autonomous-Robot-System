@@ -6,6 +6,9 @@ int myFunction(int, int);
 void setup() {
   // put your setup code here, to run once:
   int result = myFunction(2, 3);
+  
+  Serial.begin(115200);
+  Serial.println("ESP32 READY ✔");
 }
 
 void loop() {
