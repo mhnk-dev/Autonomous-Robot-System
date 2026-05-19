@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "esp32-firmware",
+			"path": "esp32-firmware"
+		},
+		{
+			"name": "pi-brain",
+			"path": "pi-brain"
+		},
+		{
+			"name": "shared-protocol",
+			"path": "shared-protocol"
+		},
+		{
+			"name": "docs",
+			"path": "docs"
+		}
+	],
+	"settings": {}
+}
