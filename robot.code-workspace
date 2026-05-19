@@ -18,6 +18,10 @@
 		{
 			"name": "docs",
 			"path": "docs"
+		},
+		{
+			"name": "robot_controller",
+			"path": "robot_controller"
 		}
 	],
 	"settings": {}
