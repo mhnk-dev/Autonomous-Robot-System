@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+
+  "configurations": [
+    {
+      "name": "Run AI Brain",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/pi-brain/main.py",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Robot Controller Debug",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/robot_controller/lib/main.dart"
+    }
+
+  ]
+}
