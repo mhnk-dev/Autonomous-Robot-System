@@ -85,7 +85,7 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
     final buttonSize = (width < height ? width : height) * 0.22;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      //backgroundColor: Colors.black,
       // appBar: AppBar(
       //   title: Text(
       //     "Robot Controller",
