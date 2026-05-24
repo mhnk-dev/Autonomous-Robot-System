@@ -39,7 +39,7 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
   }
 
   Widget controlButton({
-    required double width,
+    required double size,
     required String label,
     required String cmd,
     required IconData icon,
@@ -49,17 +49,20 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
       onTapUp: (_) => sendCommand("S"),
       onTapCancel: () => sendCommand("S"),
       child: Container(
-        width: 90,
-        height: 90,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: Colors.blueGrey,
-          borderRadius: BorderRadius.circular(width * 0.02),
+          borderRadius: BorderRadius.circular(size * 0.1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white),
-            Text(label, style: const TextStyle(color: Colors.white)),
+            Icon(icon, color: Colors.white, size: size * 0.35),
+            Text(
+              label,
+              style: TextStyle(color: Colors.white, fontSize: size * 0.12),
+            ),
           ],
         ),
       ),
@@ -73,62 +76,74 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    final buttonSize = (width < height ? width : height) * 0.22;
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(
-          "Robot Controller",
-          style: TextStyle(color: Colors.white, fontSize: width * 0.016),
-        ),
-        backgroundColor: Colors.black,
-      ),
+      // appBar: AppBar(
+      //   title: Text(
+      //     "Robot Controller",
+      //     style: TextStyle(color: Colors.white, fontSize: buttonSize * 0.15),
+      //   ),
+      //   backgroundColor: Colors.black,
+      // ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            controlButton(
-              width: width,
-              label: "FORWARD",
-              cmd: "F",
-              icon: Icons.arrow_upward,
-            ),
-            SizedBox(height: width * 0.02),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                controlButton(
-                  width: width,
-                  label: "LEFT",
-                  cmd: "L",
-                  icon: Icons.arrow_back,
-                ),
-                SizedBox(width: width * 0.02),
-                controlButton(
-                  width: width,
-                  label: "STOP",
-                  cmd: "S",
-                  icon: Icons.stop,
-                ),
-                SizedBox(width: width * 0.02),
-                controlButton(
-                  width: width,
-                  label: "RIGHT",
-                  cmd: "R",
-                  icon: Icons.arrow_forward,
-                ),
-              ],
-            ),
-            SizedBox(height: width * 0.02),
-            controlButton(
-              width: width,
-              label: "BACK",
-              cmd: "B",
-              icon: Icons.arrow_downward,
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              controlButton(
+                size: buttonSize,
+                label: "FORWARD",
+                cmd: "F",
+                icon: Icons.arrow_upward,
+              ),
+              SizedBox(height: buttonSize * 0.15),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  controlButton(
+                    size: buttonSize,
+                    label: "LEFT",
+                    cmd: "L",
+                    icon: Icons.arrow_back,
+                  ),
+                  SizedBox(width: buttonSize * 0.15),
+
+                  controlButton(
+                    size: buttonSize,
+                    label: "STOP",
+                    cmd: "S",
+                    icon: Icons.stop,
+                  ),
+                  SizedBox(width: buttonSize * 0.15),
+
+                  controlButton(
+                    size: buttonSize,
+                    label: "RIGHT",
+                    cmd: "R",
+                    icon: Icons.arrow_forward,
+                  ),
+                ],
+              ),
+
+              SizedBox(height: buttonSize * 0.15),
+
+              controlButton(
+                size: buttonSize,
+                label: "BACK",
+                cmd: "B",
+                icon: Icons.arrow_downward,
+              ),
+            ],
+          ),
         ),
       ),
     );
