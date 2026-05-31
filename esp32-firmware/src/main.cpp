@@ -9,11 +9,18 @@ const char *password = "ffffffff";
 // WebSockets
 WebSocketsServer webSocketsServer(81);
 
-// Motor Pins
-const int L1 = 18;
-const int L2 = 19;
-const int R1 = 21;
-const int R2 = 22;
+// Motor A (Left)
+const int AIN1 = 16;
+const int AIN2 = 17;
+const int PWMA = 21;
+
+// Motor B (Right)
+const int BIN1 = 18;
+const int BIN2 = 19;
+const int PWMB = 22;
+
+// Standby
+const int STBY = 23;
 
 // Command
 char command = 'S';
@@ -46,10 +53,19 @@ void setup()
   webSocketsServer.begin();
   webSocketsServer.onEvent(webSocketsServerEvent);
 
-  pinMode(L1, OUTPUT);
-  pinMode(L2, OUTPUT);
-  pinMode(R1, OUTPUT);
-  pinMode(R2, OUTPUT);
+  pinMode(AIN1, OUTPUT);
+  pinMode(AIN2, OUTPUT);
+  pinMode(PWMA, OUTPUT);
+
+  pinMode(BIN1, OUTPUT);
+  pinMode(BIN2, OUTPUT);
+  pinMode(PWMB, OUTPUT);
+
+  pinMode(STBY, OUTPUT);
+
+  digitalWrite(PWMA, HIGH);
+  digitalWrite(PWMB, HIGH);
+  digitalWrite(STBY, HIGH);
 
   stopMoving();
 }
@@ -111,40 +127,40 @@ void applyCommand(char cmd)
 // Motors
 void moveForward()
 {
-  digitalWrite(L1, LOW);
-  digitalWrite(L2, HIGH);
-  digitalWrite(R1, LOW);
-  digitalWrite(R2, HIGH);
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
 }
 
 void moveBack()
 {
-  digitalWrite(L1, HIGH);
-  digitalWrite(L2, LOW);
-  digitalWrite(R1, HIGH);
-  digitalWrite(R2, LOW);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
 }
 
 void moveLeft()
 {
-  digitalWrite(L1, HIGH);
-  digitalWrite(L2, LOW);
-  digitalWrite(R1, LOW);
-  digitalWrite(R2, HIGH);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
 }
 
 void moveRight()
 {
-  digitalWrite(L1, LOW);
-  digitalWrite(L2, HIGH);
-  digitalWrite(R1, HIGH);
-  digitalWrite(R2, LOW);
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
 }
 
 void stopMoving()
 {
-  digitalWrite(L1, LOW);
-  digitalWrite(L2, LOW);
-  digitalWrite(R1, LOW);
-  digitalWrite(R2, LOW);
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, LOW);
 }
