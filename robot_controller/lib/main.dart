@@ -76,7 +76,6 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final width = size.width;
@@ -105,7 +104,6 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
                 icon: Icons.arrow_upward,
               ),
               SizedBox(height: buttonSize * 0.15),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -116,7 +114,6 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
                     icon: Icons.arrow_back,
                   ),
                   SizedBox(width: buttonSize * 0.15),
-
                   controlButton(
                     size: buttonSize,
                     label: "STOP",
@@ -124,7 +121,6 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
                     icon: Icons.stop,
                   ),
                   SizedBox(width: buttonSize * 0.15),
-
                   controlButton(
                     size: buttonSize,
                     label: "RIGHT",
@@ -133,9 +129,7 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
                   ),
                 ],
               ),
-
               SizedBox(height: buttonSize * 0.15),
-
               controlButton(
                 size: buttonSize,
                 label: "BACK",
