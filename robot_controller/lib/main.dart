@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/io.dart';
 
@@ -27,6 +28,10 @@ class RobotControllerHomePage extends StatefulWidget {
 class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
   late IOWebSocketChannel webSocketChannel;
 
+  int speed = 160;
+  String direction = "S";
+  bool isMoving = false;
+
   @override
   void initState() {
     super.initState();
@@ -34,8 +39,10 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
     webSocketChannel = IOWebSocketChannel.connect("ws://192.168.20.1:81");
   }
 
-  void sendCommand(String cmd) {
-    webSocketChannel.sink.add(cmd);
+  void sendCommand(String cmd, {int? spd}) {
+    final data = {"cmd": cmd, "speed": spd ?? speed};
+
+    webSocketChannel.sink.add(jsonEncode(data));
   }
 
   Widget controlButton({
@@ -45,9 +52,30 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
     required IconData icon,
   }) {
     return GestureDetector(
-      onTapDown: (_) => sendCommand(cmd),
-      onTapUp: (_) => sendCommand("S"),
-      onTapCancel: () => sendCommand("S"),
+      onTapDown: (_) {
+        setState(() {
+          direction = cmd;
+          isMoving = true;
+        });
+
+        sendCommand(cmd, spd: speed);
+      },
+      onTapUp: (_) {
+        setState(() {
+          direction = "S";
+          isMoving = false;
+        });
+
+        sendCommand("S", spd: 0);
+      },
+      onTapCancel: () {
+        setState(() {
+          direction = "S";
+          isMoving = false;
+        });
+
+        sendCommand("S", spd: 0);
+      },
       child: Container(
         width: size,
         height: size,
@@ -97,6 +125,32 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Padding(
+                padding: EdgeInsets.all(width * 0.04),
+                child: Column(
+                  children: [
+                    Text(
+                      "Speed: $speed",
+                      style: TextStyle(fontSize: buttonSize * 0.15),
+                    ),
+                    Slider(
+                      value: speed.toDouble(),
+                      min: 0,
+                      max: 255,
+                      divisions: 255,
+                      label: speed.toString(),
+                      onChanged: (value) {
+                        setState(() {
+                          speed = value.toInt();
+                        });
+                        if (isMoving) {
+                          sendCommand(direction, spd: speed);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
               controlButton(
                 size: buttonSize,
                 label: "FORWARD",

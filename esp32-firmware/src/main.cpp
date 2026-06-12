@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebSocketsServer.h>
+#include <ArduinoJson.h>
 
 // WiFi
 const char *ssid = "ESP32 Firmware";
@@ -22,17 +23,25 @@ const int PWMB = 22;
 // Standby
 const int STBY = 23;
 
+// PWM
+const int PWM_FREQ = 1000;
+const int PWM_RESOLUTION = 8;
+
+const int CHANNEL_A = 0;
+const int CHANNEL_B = 1;
+
 // Command
 char command = 'S';
+int motorSpeed = 255;
 
 // Prototypes
 void webSocketsServerEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
-void applyCommand(char cmd);
+void applyCommand(char cmd, int speed);
 
-void moveForward();
-void moveBack();
-void moveLeft();
-void moveRight();
+void moveForward(int speed);
+void moveBack(int speed);
+void moveLeft(int speed);
+void moveRight(int speed);
 void stopMoving();
 
 // Setup
@@ -50,22 +59,28 @@ void setup()
   Serial.print("ESP32 IP: ");
   Serial.println(WiFi.softAPIP());
 
-  webSocketsServer.begin();
-  webSocketsServer.onEvent(webSocketsServerEvent);
-
   pinMode(AIN1, OUTPUT);
   pinMode(AIN2, OUTPUT);
-  pinMode(PWMA, OUTPUT);
 
   pinMode(BIN1, OUTPUT);
   pinMode(BIN2, OUTPUT);
-  pinMode(PWMB, OUTPUT);
 
   pinMode(STBY, OUTPUT);
 
-  digitalWrite(PWMA, HIGH);
-  digitalWrite(PWMB, HIGH);
   digitalWrite(STBY, HIGH);
+
+  // PWM
+  ledcSetup(CHANNEL_A, PWM_FREQ, PWM_RESOLUTION);
+  ledcSetup(CHANNEL_B, PWM_FREQ, PWM_RESOLUTION);
+
+  ledcAttachPin(PWMA, CHANNEL_A);
+  ledcAttachPin(PWMB, CHANNEL_B);
+
+  ledcWrite(CHANNEL_A, 0);
+  ledcWrite(CHANNEL_B, 0);
+
+  webSocketsServer.begin();
+  webSocketsServer.onEvent(webSocketsServerEvent);
 
   stopMoving();
 }
@@ -75,48 +90,81 @@ void loop()
 {
   webSocketsServer.loop();
 
-  applyCommand(command);
+  applyCommand(command, motorSpeed);
 }
 
 // WebSockets Server Event
 void webSocketsServerEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 {
-  if (type == WStype_TEXT)
+  switch (type)
   {
-    String msg = String((char *)payload);
+  case WStype_CONNECTED:
+  {
+    Serial.printf("Client %u Connected\n", num);
+    break;
+  }
+  case WStype_DISCONNECTED:
+  {
+    Serial.printf("Client %u Disconnected\n", num);
+    command = 'S';
+    motorSpeed = 0;
+    stopMoving();
+    break;
+  }
+  case WStype_TEXT:
+  {
+    JsonDocument doc;
+
+    DeserializationError error =
+        deserializeJson(doc, payload);
+
+    if (error)
+    {
+      Serial.print("JSON Error: ");
+      Serial.println(error.c_str());
+      return;
+    }
+
+    const char *cmd = doc["cmd"];
+    int speed = doc["speed"] | 0;
+
+    if (cmd != nullptr)
+    {
+      command = cmd[0];
+    }
+
+    motorSpeed = constrain(speed, 0, 255);
 
     Serial.print("CMD: ");
-    Serial.println(msg);
+    Serial.println(command);
 
-    if (msg == "F")
-      command = 'F';
-    else if (msg == "B")
-      command = 'B';
-    else if (msg == "L")
-      command = 'L';
-    else if (msg == "R")
-      command = 'R';
-    else
-      command = 'S';
+    Serial.print("Speed: ");
+    Serial.println(motorSpeed);
+
+    break;
+  }
+
+  default:
+    break;
   }
 }
 
 // Motor Control Router
-void applyCommand(char cmd)
+void applyCommand(char cmd, int speed)
 {
   switch (cmd)
   {
   case 'F':
-    moveForward();
+    moveForward(speed);
     break;
   case 'B':
-    moveBack();
+    moveBack(speed);
     break;
   case 'L':
-    moveLeft();
+    moveLeft(speed);
     break;
   case 'R':
-    moveRight();
+    moveRight(speed);
     break;
   default:
     stopMoving();
@@ -125,36 +173,44 @@ void applyCommand(char cmd)
 }
 
 // Motors
-void moveForward()
+void moveForward(int speed)
 {
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
   digitalWrite(BIN1, HIGH);
   digitalWrite(BIN2, LOW);
+  ledcWrite(CHANNEL_A, speed);
+  ledcWrite(CHANNEL_B, speed);
 }
 
-void moveBack()
+void moveBack(int speed)
 {
   digitalWrite(AIN1, LOW);
   digitalWrite(AIN2, HIGH);
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, HIGH);
+  ledcWrite(CHANNEL_A, speed);
+  ledcWrite(CHANNEL_B, speed);
 }
 
-void moveLeft()
+void moveLeft(int speed)
 {
   digitalWrite(AIN1, LOW);
   digitalWrite(AIN2, HIGH);
   digitalWrite(BIN1, HIGH);
   digitalWrite(BIN2, LOW);
+  ledcWrite(CHANNEL_A, speed);
+  ledcWrite(CHANNEL_B, speed);
 }
 
-void moveRight()
+void moveRight(int speed)
 {
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, HIGH);
+  ledcWrite(CHANNEL_A, speed);
+  ledcWrite(CHANNEL_B, speed);
 }
 
 void stopMoving()
@@ -163,4 +219,6 @@ void stopMoving()
   digitalWrite(AIN2, LOW);
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, LOW);
+  ledcWrite(CHANNEL_A, 0);
+  ledcWrite(CHANNEL_B, 0);
 }
