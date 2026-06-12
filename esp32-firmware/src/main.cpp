@@ -30,13 +30,28 @@ const int PWM_RESOLUTION = 8;
 const int CHANNEL_A = 0;
 const int CHANNEL_B = 1;
 
-// Command
-char command = 'S';
+// RobotState
+enum RobotState
+{
+  IDLE,
+  FORWARD,
+  BACKWARD,
+  LEFT,
+  RIGHT,
+  STOP,
+  EMERGENCY
+};
+
+RobotState state = IDLE;
+
 int motorSpeed = 255;
+
+unsigned long lastCommandTime = 0;
+const unsigned long TIMEOUT = 800;
 
 // Prototypes
 void webSocketsServerEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
-void applyCommand(char cmd, int speed);
+void applyState(int speed);
 
 void moveForward(int speed);
 void moveBack(int speed);
@@ -90,7 +105,19 @@ void loop()
 {
   webSocketsServer.loop();
 
-  applyCommand(command, motorSpeed);
+  if (millis() - lastCommandTime > TIMEOUT)
+  {
+    state = STOP;
+  }
+
+  if (state == STOP || state == IDLE)
+  {
+    stopMoving();
+  }
+  else
+  {
+    applyState(motorSpeed);
+  }
 }
 
 // WebSockets Server Event
@@ -106,8 +133,7 @@ void webSocketsServerEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t 
   case WStype_DISCONNECTED:
   {
     Serial.printf("Client %u Disconnected\n", num);
-    command = 'S';
-    motorSpeed = 0;
+    state = STOP;
     stopMoving();
     break;
   }
@@ -128,44 +154,59 @@ void webSocketsServerEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t 
     const char *cmd = doc["cmd"];
     int speed = doc["speed"] | 0;
 
+    motorSpeed = constrain(speed, 0, 255);
+    lastCommandTime = millis();
+
     if (cmd != nullptr)
     {
-      command = cmd[0];
+      String c = cmd;
+
+      if (c == "F")
+        state = FORWARD;
+      else if (c == "B")
+        state = BACKWARD;
+      else if (c == "L")
+        state = LEFT;
+      else if (c == "R")
+        state = RIGHT;
+      else if (c == "S")
+        state = STOP;
+      else if (c == "E")
+        state = EMERGENCY;
     }
-
-    motorSpeed = constrain(speed, 0, 255);
-
-    Serial.print("CMD: ");
-    Serial.println(command);
-
-    Serial.print("Speed: ");
-    Serial.println(motorSpeed);
-
     break;
   }
-
   default:
     break;
   }
 }
 
 // Motor Control Router
-void applyCommand(char cmd, int speed)
+void applyState(int speed)
 {
-  switch (cmd)
+  switch (state)
   {
-  case 'F':
+  case FORWARD:
     moveForward(speed);
     break;
-  case 'B':
+
+  case BACKWARD:
     moveBack(speed);
     break;
-  case 'L':
+
+  case LEFT:
     moveLeft(speed);
     break;
-  case 'R':
+
+  case RIGHT:
     moveRight(speed);
     break;
+
+  case STOP:
+    state = IDLE;
+    stopMoving();
+    break;
+  case IDLE:
   default:
     stopMoving();
     break;

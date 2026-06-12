@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/io.dart';
@@ -31,6 +32,7 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
   int speed = 160;
   String direction = "S";
   bool isMoving = false;
+  Timer? holdTimer;
 
   @override
   void initState() {
@@ -43,6 +45,20 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
     final data = {"cmd": cmd, "speed": spd ?? speed};
 
     webSocketChannel.sink.add(jsonEncode(data));
+  }
+
+  void startHolding(String cmd) {
+    holdTimer?.cancel();
+
+    holdTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      sendCommand(cmd, spd: speed);
+    });
+  }
+
+  void stopHolding() {
+    holdTimer?.cancel();
+    holdTimer = null;
+    sendCommand("S", spd: 0);
   }
 
   Widget controlButton({
@@ -58,15 +74,15 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
           isMoving = true;
         });
 
-        sendCommand(cmd, spd: speed);
+        startHolding(cmd);
       },
       onTapUp: (_) {
         setState(() {
           direction = "S";
           isMoving = false;
         });
-
-        sendCommand("S", spd: 0);
+      
+        stopHolding();
       },
       onTapCancel: () {
         setState(() {
@@ -74,7 +90,7 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
           isMoving = false;
         });
 
-        sendCommand("S", spd: 0);
+        stopHolding();
       },
       child: Container(
         width: size,
@@ -100,6 +116,7 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
   @override
   void dispose() {
     webSocketChannel.sink.close();
+    holdTimer?.cancel();
     super.dispose();
   }
 
