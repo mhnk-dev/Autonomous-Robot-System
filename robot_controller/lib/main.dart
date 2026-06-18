@@ -29,16 +29,28 @@ class RobotControllerHomePage extends StatefulWidget {
 class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
   late IOWebSocketChannel webSocketChannel;
 
-  int speed = 160;
+  int speed = 100;
   String direction = "S";
   bool isMoving = false;
   Timer? holdTimer;
+  int distance = 0;
+  int obstacleDistance = 40;
 
   @override
   void initState() {
     super.initState();
 
     webSocketChannel = IOWebSocketChannel.connect("ws://192.168.20.1:81");
+
+    webSocketChannel.stream.listen((message) {
+      final data = jsonDecode(message);
+
+      if (data["distance"] != null) {
+        setState(() {
+          distance = data["distance"];
+        });
+      }
+    });
   }
 
   void sendCommand(String cmd, {int? spd}) {
@@ -81,7 +93,7 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
           direction = "S";
           isMoving = false;
         });
-      
+
         stopHolding();
       },
       onTapCancel: () {
@@ -143,12 +155,40 @@ class _RobotControllerHomePageState extends State<RobotControllerHomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Padding(
-                padding: EdgeInsets.all(width * 0.04),
+                padding: EdgeInsets.only(
+                  left: width * 0.05,
+                  right: width * 0.05,
+                  top: width * 0.05,
+                  bottom: width * 0.01,
+                ),
                 child: Column(
                   children: [
-                    Text(
-                      "Speed: $speed",
-                      style: TextStyle(fontSize: buttonSize * 0.15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Speed: $speed",
+                          style: TextStyle(fontSize: buttonSize * 0.15),
+                        ),
+                        Text(
+                          "Distance: $distance cm",
+                          style: TextStyle(
+                            fontSize: buttonSize * 0.15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          distance < obstacleDistance
+                              ? "⚠ OBSTACLE"
+                              : "✓ CLEAR",
+                          style: TextStyle(
+                            fontSize: buttonSize * 0.15,
+                            color: distance < obstacleDistance
+                                ? Colors.red
+                                : Colors.green,
+                          ),
+                        ),
+                      ],
                     ),
                     Slider(
                       value: speed.toDouble(),

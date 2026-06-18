@@ -2,6 +2,25 @@
 #include <WiFi.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
+#include <VL53L0X.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// Sensor
+VL53L0X sensor;
+int distance = 0;
+
+int filteredDistance = 0;
+const int OBSTACLE_DISTANCE = 40;
+
+// OLED
+TwoWire I2C_OLED = TwoWire(1);
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &I2C_OLED, -1);
 
 // WiFi
 const char *ssid = "ESP32 Firmware";
@@ -58,6 +77,7 @@ void moveBack(int speed);
 void moveLeft(int speed);
 void moveRight(int speed);
 void stopMoving();
+int readDistance();
 
 // Setup
 void setup()
@@ -94,6 +114,25 @@ void setup()
   ledcWrite(CHANNEL_A, 0);
   ledcWrite(CHANNEL_B, 0);
 
+  // Sensor
+  Wire.begin(25, 26);
+  Serial.println("Starting VL53L0X...");
+
+  sensor.init();
+  sensor.setTimeout(500);
+  sensor.startContinuous();
+  Serial.println("Sensor Ready");
+
+  // I2C_OLED
+  I2C_OLED.begin(32, 33);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+  {
+    Serial.println("OLED FAIL");
+    while (true)
+      ;
+  }
+
   webSocketsServer.begin();
   webSocketsServer.onEvent(webSocketsServerEvent);
 
@@ -104,6 +143,52 @@ void setup()
 void loop()
 {
   webSocketsServer.loop();
+
+  filteredDistance = readDistance();
+
+  static unsigned long lastSendTime = 0;
+
+  if (millis() - lastSendTime > 100)
+  {
+    lastSendTime = millis();
+
+    JsonDocument doc;
+    doc["distance"] = filteredDistance;
+
+    String json;
+    serializeJson(doc, json);
+
+    webSocketsServer.broadcastTXT(json);
+  }
+
+  static int lastDistance = -1;
+
+  if (filteredDistance != lastDistance)
+  {
+    lastDistance = filteredDistance;
+
+    display.clearDisplay();
+
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.println("Distance:");
+
+    display.setTextSize(3);
+    display.setCursor(0, 20);
+    display.print(filteredDistance);
+    display.println(" cm");
+
+    display.display();
+  }
+
+  if (filteredDistance != 999 &&
+      filteredDistance < OBSTACLE_DISTANCE &&
+      state == FORWARD)
+  {
+    Serial.println("STOPPING");
+    state = STOP;
+  }
 
   if (millis() - lastCommandTime > TIMEOUT)
   {
@@ -262,4 +347,27 @@ void stopMoving()
   digitalWrite(BIN2, LOW);
   ledcWrite(CHANNEL_A, 0);
   ledcWrite(CHANNEL_B, 0);
+}
+
+int readDistance()
+{
+  const int INVALID_DISTANCE = 999;
+
+  long sum = 0;
+  int count = 0;
+
+  for (int i = 0; i < 3; i++)
+  {
+    int d = sensor.readRangeContinuousMillimeters() / 10;
+
+    if (d > 0 && d < 200)
+    {
+      sum += d;
+      count++;
+    }
+
+    delay(10);
+  }
+
+  return (count > 0) ? (sum / count) : INVALID_DISTANCE;
 }
